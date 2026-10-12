@@ -24,8 +24,9 @@ const {chromium} = require(process.env.PLAYWRIGHT_MODULE || 'playwright');
  assert.match(await page.locator('#edu-feedback').textContent(),/incorrecta/);
  await page.locator('#edu-continue').click();
  await page.evaluate(()=>{scoreEnemyStomp(new Thing(Koopa));eduFlush();});
- assert.match(await page.locator('#edu-title').textContent(),/Enemigo/);
- await page.keyboard.press('2'); await page.keyboard.press('Enter');
+ assert.equal(await page.evaluate(()=>eduLocked()),false);
+ await page.evaluate(()=>{scoreEnemyFire(new Thing(Goomba));scoreEnemyStar(new Thing(Koopa));eduTrigger('enemigo');eduFlush();});
+ assert.equal(await page.evaluate(()=>eduLocked()),false);
  // Pause must remain after release; opposite directions must not get stuck.
  await page.keyboard.press('p'); assert.equal(await page.evaluate(()=>paused),true);
  await page.locator('.edu-close').click();
@@ -40,6 +41,15 @@ const {chromium} = require(process.env.PLAYWRIGHT_MODULE || 'playwright');
   let result={};[30,60,120,144].forEach(hz=>{ticks=0;paused=false;last_frame_time=1000;physicsAccumulator=0;for(let i=1;i<=hz;i++)upkeep(1000+i*1000/hz);result[hz]=ticks;});
   [maintainSolids,maintainCharacters,maintainPlayer,refillCanvas,eduFlush,QuadsKeeper.determineAllQuadrants,TimeHandler.handleEvents,requestAnimationFrame]=originals;paused=true;return result;
  });assert.deepEqual(timing,{'30':60,'60':60,'120':60,'144':60});
+ // Drawing must not drop to 30 FPS because physics and display are out of phase.
+ const drawn=await page.evaluate(()=>{
+  pause();const originalRAF=requestAnimationFrame, originalDraw=refillCanvas;
+  requestAnimationFrame=()=>0;let renders=0;refillCanvas=()=>{renders++;};
+  paused=false;last_frame_time=1000;nextRenderTime=1000+1000/60;physicsAccumulator=0;
+  let t=1000;for(let i=0;i<60;i++){t+=i%2?1000/30-16.5:16.5;upkeep(t);}
+  pause();requestAnimationFrame=originalRAF;refillCanvas=originalDraw;
+  return renders;
+ });assert.equal(drawn,60);
  // Simulated standard controller, disconnection, and modal navigation.
  await page.evaluate(()=>{window.testPad={index:0,connected:true,id:'Test PS standard',mapping:'standard',axes:[0,0],buttons:Array.from({length:16},()=>({pressed:false}))};navigator.getGamepads=()=>[window.testPad];unpause();});
  await page.evaluate(()=>testPad.axes[0]=1);await page.waitForTimeout(80);assert.equal(await page.evaluate(()=>player.keys.run),1);
@@ -51,7 +61,7 @@ const {chromium} = require(process.env.PLAYWRIGHT_MODULE || 'playwright');
  // Report measured frame rate separately from deterministic speed checks.
  await page.waitForTimeout(3500);
  console.log('FPS observado:',await page.locator('#fps_counter').textContent());
- console.log('Pruebas: monedas, hongos, enemigos, acierto/error, pausa, 32 niveles, física 30/60/120/144 Hz, mando y desconexión.');
+ console.log('Pruebas: monedas y hongos, enemigos sin preguntas, acierto/error, pausa, 32 niveles, física 30/60/120/144 Hz, mando y desconexión.');
  assert.deepEqual(errors,[]);
  await page.evaluate(()=>{gainCoin();eduFlush();});await page.screenshot({path:path.resolve(__dirname,'../question-preview.png')});
  await page.setViewportSize({width:390,height:844});await page.screenshot({path:path.resolve(__dirname,'../mobile-preview.png')});

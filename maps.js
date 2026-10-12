@@ -598,10 +598,17 @@ function exitPipeVert(me, pipe) {
 function endLevel() {
   if(map.ending) return;
   map.ending = true;
-  map.random ? setMapRandom(["Random", "Castle"]) : setNextLevelArr(currentmap);
   storePlayerStats();
   pause();
+  if(map.random) return setMapRandom(["Random", "Castle"]);
+  setNextLevelArr(currentmap);
   setMap();
+}
+
+function setNextLevelArr(level) {
+  if(++level[1] > 4) { level[1] = 1; ++level[0]; }
+  if(level[0] > 8) level[0] = 1;
+  return level;
 }
 
 function setExitLoc(num) {

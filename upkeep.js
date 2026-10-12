@@ -6,9 +6,26 @@ var frame_count = 0;
 var fps_last_calc = 0;
 
 var physicsAccumulator = 0;
+var animationGeneration = 0;
+var nextRenderTime = 0;
+function scheduleUpkeep() {
+  if(window.nextupk || window.paused) return;
+  var generation = animationGeneration;
+  window.nextupk = requestAnimationFrame(function(timestamp) {
+    if(generation !== animationGeneration) return;
+    window.nextupk = null;
+    upkeep(timestamp);
+  });
+}
+function rememberRenderPositions(things) {
+  for(var n = 0; n < things.length; ++n) {
+    things[n].renderPreviousLeft = things[n].left;
+    things[n].renderPreviousTop = things[n].top;
+  }
+}
 function upkeep(timestamp) {
   if(window.paused) return;
-  window.nextupk = requestAnimationFrame(upkeep);
+  scheduleUpkeep();
   timestamp = typeof timestamp === "number" ? timestamp : performance.now();
   if(!last_frame_time) { last_frame_time=timestamp; fps_last_calc=timestamp; return; }
   var elapsed = Math.min(timestamp-last_frame_time, 100);
@@ -18,6 +35,9 @@ function upkeep(timestamp) {
   while(physicsAccumulator+0.001 >= stepTime && steps<5 && !paused) {
     physicsAccumulator-=stepTime; ++steps;
     for(var i=window.speed;i>0 && !paused;--i) {
+      rememberRenderPositions(characters);
+      rememberRenderPositions(solids);
+      rememberRenderPositions(scenery);
       QuadsKeeper.determineAllQuadrants(solids);
       maintainSolids(); maintainCharacters(); maintainPlayer();
       if(texts.length)maintainTexts();
@@ -26,7 +46,15 @@ function upkeep(timestamp) {
     }
   }
   if(steps===5)physicsAccumulator=Math.min(physicsAccumulator,stepTime);
-  if(steps || elapsed >= 14) { refillCanvas(); ++frame_count; }
+  // Rendering has its own deadline, independent of physics. This avoids
+  // alternating drawn/skipped frames when physics lands between two callbacks.
+  window.renderFraction = paused ? 1 : Math.max(0, Math.min(1, physicsAccumulator / stepTime));
+  if(!nextRenderTime) nextRenderTime = timestamp;
+  if(timestamp + 0.75 >= nextRenderTime) {
+    refillCanvas(); ++frame_count;
+    nextRenderTime += stepTime;
+    if(nextRenderTime < timestamp - stepTime) nextRenderTime = timestamp + stepTime;
+  }
   if(timestamp-fps_last_calc>=1000) {
     window.fps=Math.round(frame_count*1000/(timestamp-fps_last_calc));
     var el=document.getElementById("fps_counter");
@@ -40,10 +68,10 @@ function adjustFPS() {
 }
 
 function pause(big) {
+  ++animationGeneration;
   if(paused && !window.nextupk) return;
   if(window.nextupk) {
     cancelAnimationFrame(nextupk);
-    clearTimeout(nextupk);
     window.nextupk = null;
   }
   AudioPlayer.pause();
@@ -56,9 +84,12 @@ function unpause() {
   last_frame_time = 0;
   physicsAccumulator = 0;
   frame_count = 0;
+  nextRenderTime = 0;
   window.time_prev = (window.performance && performance.now) ? performance.now() : now();
-  window.nextupk = requestAnimationFrame(upkeep);
   paused = false;
+  ++animationGeneration;
+  window.nextupk = null;
+  scheduleUpkeep();
   AudioPlayer.resume();
 }
 

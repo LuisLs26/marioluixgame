@@ -12,8 +12,19 @@ function resetCanvas() {
   window.canvas.style.width = "100%";
   window.canvas.style.height = "100%";
   window.context = canvas.getContext("2d");
+  resizeRenderCanvas();
   canvasDisableSmoothing(window.canvas, window.context);
   body.appendChild(canvas);
+}
+
+function resizeRenderCanvas() {
+  var detail = 'low';
+  try { detail = localStorage.marioDetail || 'low'; } catch(e) {}
+  window.renderScale = detail === 'high' ? 1 : 0.5;
+  canvas.width = Math.round(gamescreen.unitwidth * renderScale);
+  canvas.height = Math.round(gamescreen.unitheight * renderScale);
+  context.setTransform(renderScale, 0, 0, renderScale, 0, 0);
+  canvasDisableSmoothing(canvas, context);
 }
 
 /* Sprite Parsing */
@@ -413,7 +424,7 @@ function refillCanvas() {
   // I could implement dirty rectangles, but why? Worst case == average case...
   // context.clearRect(0, 0, canvas.width, canvas.height);
   context.fillStyle = area.fillStyle;
-  context.fillRect(0, 0, canvas.width, canvas.height);
+  context.fillRect(0, 0, gamescreen.unitwidth, gamescreen.unitheight);
   for(i = scenery.length - 1; i >= 0; --i) drawThingOnCanvas(context, scenery[i]);
   for(i = solids.length - 1; i >= 0; --i) drawThingOnCanvas(context, solids[i]);
   for(i = characters.length - 1; i >= 0; --i) drawThingOnCanvas(context, characters[i]);
@@ -424,12 +435,19 @@ function refillCanvas() {
 function drawThingOnCanvas(context, me) {
   if(me.hidden) return;
   // Frustum culling: do not waste draw calls on objects outside the visible canvas
-  if(me.right < 0 || me.left > canvas.width || me.bottom < 0 || me.top > canvas.height) return;
+  if(me.right < 0 || me.left > gamescreen.unitwidth || me.bottom < 0 || me.top > gamescreen.unitheight) return;
   
+  var fraction = window.paused ? 1 : (window.renderFraction === undefined ? 1 : window.renderFraction);
+  var dx = me.renderPreviousLeft === undefined ? 0 : (me.renderPreviousLeft - me.left) * (1 - fraction);
+  var dy = me.renderPreviousTop === undefined ? 0 : (me.renderPreviousTop - me.top) * (1 - fraction);
+  // Teleports and map transitions should appear immediately.
+  if(Math.abs(dx) > unitsize * 32 || Math.abs(dy) > unitsize * 32) dx = dy = 0;
+  if(dx || dy) context.translate(dx, dy);
   // If there's just one sprite, it's pretty simple
   if(me.num_sprites == 1) drawThingOnCanvasSingle(context, me.canvas, me, me.left, me.top);
   // Otherwise some calculations will be needed
   else drawThingOnCanvasMultiple(context, me.canvases, me.canvas, me, me.left, me.top);
+  if(dx || dy) context.translate(-dx, -dy);
 }
 // Used for the vast majority of sprites, where only one sprite is drawn
 function drawThingOnCanvasSingle(context, canvas, me, leftc, topc) {

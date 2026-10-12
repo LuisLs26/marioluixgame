@@ -8,7 +8,7 @@ Abre `index.html` en Chrome o Edge. También puedes servir esta carpeta con `pyt
 
 ## Aprender jugando
 
-- Recoger monedas (incluidas las de bloques), consumir hongos y derrotar enemigos activa una pregunta.
+- Solo recoger monedas (incluidas las de bloques) y consumir hongos activa una pregunta. Derrotar enemigos ya no interrumpe el juego.
 - El juego y su reloj se detienen mientras respondes. Los eventos simultáneos se atienden en orden.
 - Hay 24 preguntas originales basadas en **Propuesta de.pdf**, sobre evaluación educativa, competencias, criterios, evidencias y contextualización. Cada pregunta indica página y sección.
 - Las preguntas y respuestas se mezclan; el banco completo se recorre antes de repetir.
@@ -32,16 +32,19 @@ En **Controles / mando** puedes elegir el perfil genérico USB o cambiar los nú
 
 ## Rendimiento y correcciones
 
-Objetivo: 60 FPS, sin garantizarlo en todos los equipos. Canvas de 480 píxeles de altura, ancho interno limitado a 960 píxeles; sprites y patrones en caché y descarte de dibujos fuera de pantalla. Física a 60 pasos por segundo mediante acumulador, con recuperación limitada después de una interrupción para evitar bloqueos. El reloj y movimiento no se aceleran en pantallas de 120/144 Hz.
+Objetivo: 60 FPS, sin garantizarlo en todos los equipos. Modo de rendimiento predeterminado: buffer de 240 píxeles de altura, ancho máximo de 480; procesa un 75 % menos de píxeles que el modo de más resolución (480 píxeles de altura). Se cambia en Controles / mando sin reiniciar la partida. Sprites y patrones en caché y descarte de dibujos fuera de pantalla. Física a 60 pasos por segundo mediante acumulador, con recuperación limitada después de una interrupción para evitar bloqueos. El reloj y movimiento no se aceleran en pantallas de 120/144 Hz. El dibujado tiene su propio calendario de 60 FPS e interpolación entre posiciones físicas para evitar saltos; un identificador del bucle impide que sobrevivan ciclos de animación antiguos al pausar.
 
 Se corrigieron la pausa al soltar teclas, direcciones simultáneas, controles retenidos al perder foco o desconectar el mando, entidades saltadas al borrar durante la iteración, puntuación máxima inválida y entrega de vidas al superar múltiplos de 10 000 puntos. El constructor de mapas ya no sobrescribe `Map` nativo del navegador.
 
 ## Validación
 
-Con Node y Playwright instalado: `node tests/browser.cjs`. Puedes especificar `PLAYWRIGHT_MODULE` y `CHROME_PATH` si están en otra ubicación.
+Con Node y Playwright instalado: `node tests/browser.cjs` y `node tests/end-level.cjs`. Puedes especificar `PLAYWRIGHT_MODULE` y `CHROME_PATH` si están en otra ubicación.
 
-Pruebas automatizadas: recogida de monedas y hongos, derrota de Koopa, acierto/error y continuación, congelación del reloj durante preguntas, pausa, direcciones opuestas, carga de los 32 niveles, 60 pasos por segundo a 30/60/120/144 Hz, mando estándar simulado y desconexión. Se revisó el cuadro a 1280×720 y 390×844. Medición local tras calentamiento: 60 FPS; no equivale a una certificación de hardware de gama baja ni a completar los 32 niveles.
+Pruebas automatizadas: recogida de monedas y hongos, derrota de enemigos sin preguntas, acierto/error y continuación, congelación del reloj durante preguntas, pausa, direcciones opuestas, carga de los 32 niveles, 60 pasos por segundo a 30/60/120/144 Hz, mando estándar simulado, navegación en las cuatro direcciones, repetición al mantener la cruceta, confirmación, bloqueo del salto retenido y desconexión. Se revisó el cuadro a 1280×720 y 390×844. También se prueba el recorrido completo bandera → castillo → nivel 1-2 con audio bloqueado, y 60 dibujos con tiempos de fotogramas alternados. La medición local no equivale a una certificación de hardware de gama baja ni a completar los 32 niveles.
 
 ## Recursos originales
 
 Los personajes, música y gráficos originales pertenecen a sus respectivos titulares. El proyecto conserva el motor y los recursos que venían en la carpeta proporcionada; esta edición no concede derechos sobre ellos.
+
+El cuestionario utiliza bloques de interrogación, moneda, borde de ladrillos, colores y tipografía de píxeles inspirados en Mario. La selección del mando se indica con una flecha visible. La transición de nivel ya no depende del evento de audio `ended`; se recuperó la función de avance 1-1 → 1-2, 1-4 → 2-1 hasta completar los ocho mundos.
+

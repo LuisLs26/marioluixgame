@@ -457,7 +457,6 @@ function hitShell(one, two) {
             
             AudioPlayer.play("Kick");
             score(one, findScore(two.enemyhitcount), true);
-            if(window.eduTrigger) eduTrigger("enemigo", one);
             ++two.enemyhitcount;
           } // Otherwise the enemy just turns around
           else one.moveleft = objectToLeft(one, two);
@@ -2543,7 +2542,7 @@ function FlagCollision(me, detector) {
   var mebot = false,
       flagbot = false,
       scoreheight = (detector.stone.top - me.bottom) / unitsize,
-      down = setInterval(function() {
+      down = TimeHandler.addEventInterval(function() {
         // Move player until he hits the bottom, at which point mebot = true
         if(!mebot) {
           if(me.bottom >= detector.stone.top) {
@@ -2564,11 +2563,10 @@ function FlagCollision(me, detector) {
         // Once both are at the bottom:
         if(mebot && flagbot) {
           setBottom(me, detector.stone.top, true);
-          clearInterval(down);
-          setTimeout(function() { FlagOff(me, detector.pole); }, timer * 21);
+          TimeHandler.addEvent(function() { FlagOff(me, detector.pole); }, 21);
+          return true;
         }
-        refillCanvas();
-      }, timer);
+      }, 1, Infinity);
 }
 // See http://themushroomkingdom.net/smb_breakdown.shtml near bottom
 // Stages: 8, 28, 40, 62
@@ -2599,15 +2597,16 @@ function FlagOff(me, pole) {
   flipHoriz(me);
   TimeHandler.clearClassCycle(me, "climbing");
   setLeft(me, pole.right, true);
-  setTimeout(function() {
+  TimeHandler.addEvent(function() {
     AudioPlayer.play("Stage Clear");
     playerHopsOff(me, pole, true);
-  }, timer * 14);
+  }, 14);
 }
 
 // Me === Player
 function endLevelPoints(me, detector) {
-  if(!me || !me.player) return;
+  if(!me || !me.player || me.countingEndPoints) return;
+  me.countingEndPoints = true;
   
   // Stop the game, and get rid of player and the detectors
   notime = nokeys = true;
@@ -2618,7 +2617,7 @@ function endLevelPoints(me, detector) {
   var numfire = parseInt(getLast(String(data.time.amount)));
   if(!(numfire == 1 || numfire == 3 || numfire == 6)) numfire = 0;
   // Count down the points (x50)
-  var points = setInterval(function() {
+  TimeHandler.addEventInterval(function() {
     // 50 for each
     --data.time.amount;
     data.score.amount += 50;
@@ -2629,35 +2628,24 @@ function endLevelPoints(me, detector) {
     // Once it's done, move on to the fireworks.
     if(data.time.amount <= 0)  {
       // pause();
-      clearInterval(points);
-      setTimeout(function() { endLevelFireworks(me, numfire, detector); }, timer * 49);
+      TimeHandler.addEvent(function() { endLevelFireworks(me, numfire, detector); }, 49);
+      return true;
     }
-  }, timer);
+  }, 1, Infinity);
 }
 function endLevelFireworks(me, numfire, detector) {
-  var nextnum, nextfunc,
-      i = 0;
-  if(numfire) {
-    // var castlemid = detector.castle.left + detector.castle.width * unitsized2;
-    var castlemid = detector.left + 32 * unitsized2;
-    while(i < numfire)
-      explodeFirework(++i, castlemid); // Pre-increment since explodeFirework expects numbers starting at 1
-    nextnum = timer * (i + 2) * 42;
-  }
-  else nextnum = 0;
-  
-  // The actual endLevel happens after all the fireworks are done
-  nextfunc = function() { setTimeout(function() { endLevel(); }, nextnum); };
-  
-  // If the Stage Clear sound is still playing, wait for it to finish
-  AudioPlayer.addEventImmediate("Stage Clear", "ended", function() { TimeHandler.addEvent(nextfunc, 35); });
+  var castlemid = detector.left + 32 * unitsized2;
+  for(var i = 1; i <= numfire; ++i) explodeFirework(i, castlemid);
+  // Progress must never depend on audio playback, autoplay permissions or mute.
+  TimeHandler.addEvent(endLevel, 35 + (numfire ? (numfire + 2) * 42 : 0));
 }
+
 function explodeFirework(num, castlemid) {
-  setTimeout(function() {
+  TimeHandler.addEvent(function() {
     var fire = new Thing(Firework, num);
     addThing(fire, castlemid + fire.locs[0] - unitsize * 6, unitsizet16 + fire.locs[1]);
     fire.animate();
-  }, timer * num * 42);
+  }, num * 42);
 }
 function Firework(me, num) {
   me.width = me.height = 8;

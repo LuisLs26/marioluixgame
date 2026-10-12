@@ -60,8 +60,7 @@ function FullScreenMario() {
     resetGameScreenPosition();
     
     // Resize the main canvas backing buffer
-    window.canvas.width = gamescreen.unitwidth;
-    window.canvas.height = gamescreen.unitheight;
+    resizeRenderCanvas();
     window.canvas.style.width = "100%";
     window.canvas.style.height = "100%";
     canvasDisableSmoothing(window.canvas, window.context);
@@ -310,8 +309,11 @@ function scrollWindow(x, y) {
   if(window.playediting) scrollEditor(x, y);
 }
 function shiftAll(stuff, x, y) {
-  for(var i = stuff.length - 1; i >= 0; --i)
-      shiftBoth(stuff[i], x, y);
+  for(var i = stuff.length - 1; i >= 0; --i) {
+    shiftBoth(stuff[i], x, y);
+    if(stuff[i].renderPreviousLeft !== undefined) stuff[i].renderPreviousLeft += x || 0;
+    if(stuff[i].renderPreviousTop !== undefined) stuff[i].renderPreviousTop += y || 0;
+  }
 }
 function shiftElements(stuff, x, y) {
   for(var i = stuff.length - 1, elem; i >= 0; --i) {

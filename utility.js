@@ -501,7 +501,6 @@ function scorePlayerShell(player, shell) {
   return score(shell, 100, true);
 }
 function scoreEnemyStomp(enemy) {
-  if(window.eduTrigger) eduTrigger("enemigo", enemy);
   var amount = 100;
   switch(enemy.type.split(" ")[0]) {
     case "koopa": amount = enemy.fly ? 400 : 100; break;
@@ -542,7 +541,6 @@ function scoreEnemyBelow(enemy) {
   scoreEnemyFin(enemy, amount);
 }
 function scoreEnemyFin(enemy, amount) {
-  if(window.eduTrigger) eduTrigger("enemigo", enemy);
   score(enemy, amount, true);
 }
 

@@ -132,3 +132,20 @@ canvas {
 #edu-continue,.edu-close{background:#2469dc;color:white;border-color:#2469dc;text-align:center;margin-top:12px}.feedback-good,.feedback-review{padding:12px;border-radius:10px;background:#e7eef8;font-weight:500}.edu-card select{padding:8px;max-width:100%;font:14px system-ui}
 @media(max-width:600px){.edu-card{padding:18px}.edu-card h1{font-size:22px}.edu-card h2{font-size:18px}#edu-bar{font-size:11px;gap:5px;bottom:6px;left:6px}#edu-bar button{padding:5px}#fps_counter{bottom:56px}.edu-option{font-size:14px;padding:10px}}
 .edu-card input[type=number]{width:48px;font:15px system-ui;padding:6px;border:1px solid #aebdd2;border-radius:5px}.edu-card #pad-reset{display:block;margin-top:8px;padding:6px;border:1px solid #aebdd2;border-radius:5px;background:white;color:#192b45}
+/* Mushroom Kingdom quiz: pixel borders, question blocks and coin colors. */
+#edu-overlay{background:rgba(15,31,64,.78)}
+.edu-card{position:relative;border:8px solid #713318;border-radius:0;background:#fff3d5;box-shadow:inset 0 0 0 4px #ffc45c,8px 8px 0 #26130d,0 0 0 4px #f8c372;color:#3b251d;padding:26px 28px 30px}
+.edu-card:after{content:'';display:block;height:14px;margin:22px -28px -30px;background:repeating-linear-gradient(90deg,transparent 0 39px,#723219 39px 43px),linear-gradient(#e58d45 0 5px,#ad5127 5px 11px,#713318 11px);border-top:4px solid #713318}
+.edu-eyebrow{display:flex;align-items:center;gap:12px;color:#79411e;font-family:'Press Start',monospace;font-size:10px;line-height:1.7;letter-spacing:0}
+.edu-block{display:inline-grid;place-items:center;flex:none;width:32px;height:32px;border:3px solid #8f4b12;background:#ffc63e;color:#fff;font:22px 'Press Start',monospace;text-shadow:2px 2px #9c4917;box-shadow:inset 3px 3px #fff39d,inset -3px -3px #d58019}
+.edu-coin{margin-left:auto;color:#ffbf00;font-size:25px;text-shadow:2px 2px #ac5700}
+.edu-card h1{font-family:'Press Start',monospace;color:#c52c20;text-shadow:2px 2px #ffd7a5;font-size:20px;line-height:1.6}
+.edu-card h2{color:#3b251d;font-size:22px}.edu-source,.edu-hint{color:#795638}
+.edu-option{position:relative;background:#ffdb75;color:#452b1b;border:3px solid #a35b21;border-radius:0;box-shadow:inset 2px 2px #fff5bb,3px 3px #743419;padding-left:34px}
+.edu-option:hover,.edu-option.selected{background:#fff1a6;border-color:#d43c24}.edu-option.selected:before{content:'▶';position:absolute;left:10px;top:50%;transform:translateY(-50%);color:#cb3022;font-size:15px}
+.edu-option:focus-visible,.edu-card button:focus-visible,.edu-card select:focus-visible{outline:3px solid #e73e26;outline-offset:3px}
+.edu-option.correct{background:#d5eea4;border-color:#43842d;color:#254717}.edu-option.incorrect{background:#ffd1bc;border-color:#be3725;color:#7f251b}
+#edu-continue,.edu-close{background:#d93a25;border:3px solid #7e2118;border-radius:0;box-shadow:inset 2px 2px #fa8871,4px 4px #743419;color:white;font-weight:800}
+.feedback-good,.feedback-review{border:3px solid #a05f28;border-radius:0;background:#fff9e7;color:#3b251d}
+#edu-bar{background:#873f22;border:3px solid #f8b968;border-radius:0;box-shadow:3px 3px #432217}#edu-bar button{border-radius:0;background:#eeb54b;color:#392819;border:2px solid #ffe0a0;font-weight:700}
+@media(max-width:600px){.edu-card{padding:16px;border-width:5px}.edu-card h1{font-size:15px}.edu-card h2{font-size:18px}.edu-card:after{margin:18px -16px -16px}.edu-eyebrow{font-size:8px;gap:8px}.edu-block{width:25px;height:25px;font-size:18px}.edu-option{padding-left:28px}.edu-option.selected:before{left:7px;font-size:12px}}
