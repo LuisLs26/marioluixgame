@@ -25,7 +25,13 @@ const {chromium}=require(process.env.PLAYWRIGHT_MODULE||'playwright');
  await page.evaluate(()=>testPad.buttons[0].pressed=false);await page.waitForTimeout(80);
  const first=await page.locator('.edu-option.selected').textContent();await page.evaluate(()=>testPad.buttons[13].pressed=true);await page.waitForTimeout(80);assert.notEqual(await page.locator('.edu-option.selected').textContent(),first);
  await page.waitForTimeout(400);const repeated=await page.locator('.edu-option.selected').textContent();assert.notEqual(repeated,first);
- await page.evaluate(()=>testPad.buttons[13].pressed=false);await page.waitForTimeout(60);await page.evaluate(()=>testPad.axes[0]=-1);await page.waitForTimeout(60);assert.notEqual(await page.locator('.edu-option.selected').textContent(),repeated);
+ await page.evaluate(()=>testPad.buttons[13].pressed=false);await page.waitForTimeout(80);
+ // Capture selection after releasing: one final repeated input can arrive
+ // between reading the previous selection and releasing the held button.
+ const beforeLeft=await page.locator('.edu-option.selected').textContent();
+ await page.evaluate(()=>testPad.axes[0]=-1);
+ await page.waitForFunction(before=>document.querySelector('.edu-option.selected').textContent!==before,beforeLeft);
+ assert.notEqual(await page.locator('.edu-option.selected').textContent(),beforeLeft);
  await page.evaluate(()=>{testPad.axes[0]=0;testPad.buttons[0].pressed=true;});await page.waitForTimeout(80);assert.equal(await page.locator('#edu-continue').isVisible(),true);
  await page.screenshot({path:path.resolve(__dirname,'../question-preview.png')});await page.setViewportSize({width:390,height:844});await page.screenshot({path:path.resolve(__dirname,'../mobile-preview.png')});
  assert.deepEqual(errors,[]);console.log('Mando: navegación, repetición, confirmación y protección contra salto retenido verificadas.');await browser.close();
