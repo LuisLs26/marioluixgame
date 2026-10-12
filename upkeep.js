@@ -50,7 +50,9 @@ function upkeep(timestamp) {
   // alternating drawn/skipped frames when physics lands between two callbacks.
   window.renderFraction = paused ? 1 : Math.max(0, Math.min(1, physicsAccumulator / stepTime));
   if(!nextRenderTime) nextRenderTime = timestamp;
-  if(timestamp + 0.75 >= nextRenderTime) {
+  // At roughly 60 Hz, always present the frame instead of skipping an early
+  // callback. At higher refresh rates use the 60 Hz presentation deadline.
+  if(elapsed >= 15 || timestamp + 0.75 >= nextRenderTime) {
     refillCanvas(); ++frame_count;
     nextRenderTime += stepTime;
     if(nextRenderTime < timestamp - stepTime) nextRenderTime = timestamp + stepTime;

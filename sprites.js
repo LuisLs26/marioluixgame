@@ -5,13 +5,14 @@
 function resetCanvas() {
   if(!window.gamescreen) resetGameScreenPosition();
   // Set buffer size to gamescreen unit dimensions for extreme performance on low-end hardware
-  window.canvas = getCanvas(gamescreen.unitwidth, gamescreen.unitheight, true);
+  window.canvas = document.createElement('canvas');
   window.canvas.style.position = "absolute";
   window.canvas.style.top = "0";
   window.canvas.style.left = "0";
   window.canvas.style.width = "100%";
   window.canvas.style.height = "100%";
-  window.context = canvas.getContext("2d");
+  // The scene paints its entire background; no alpha compositing is needed.
+  window.context = canvas.getContext("2d", {alpha: false});
   resizeRenderCanvas();
   canvasDisableSmoothing(window.canvas, window.context);
   body.appendChild(canvas);

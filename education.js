@@ -2,13 +2,17 @@
   'use strict';
   var queue = [], deck = [], current, answered = false, selected = 0, panel, priorFocus;
   var total = 0, correct = 0, streak = 0;
+  var uiBar;
   function shuffle(a) { for(var i=a.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1)),t=a[i];a[i]=a[j];a[j]=t;} return a; }
   function resetInput() { if(window.player) { player.keys = new Keys(); player.canjump = true; } }
   function ensureUI() {
-    if(document.getElementById('edu-bar')) return;
+    if(uiBar && uiBar.isConnected) return;
+    uiBar = document.getElementById('edu-bar');
+    if(uiBar) return;
     var bar=document.createElement('div'); bar.id='edu-bar';
     bar.innerHTML='<span id="edu-progress">Aciertos '+correct+' / '+total+'</span><button id="edu-help">Controles / mando</button><button id="edu-pause">Pausa</button>';
     document.body.appendChild(bar);
+    uiBar = bar;
     document.getElementById('edu-help').onclick=function(){ showHelp(); };
     document.getElementById('edu-pause').onclick=window.toggleGamePause;
   }
@@ -50,7 +54,7 @@
   function answer(i) {
     if(answered || !current)return; answered=true;
     var bs=panel.querySelectorAll('.edu-option'),ok=Number(bs[i].dataset.answer)===current.answer;
-    total++;if(ok){correct++;streak++;score(player,250,false);}else streak=0;
+    total++;if(ok){correct++;streak++;score(player,250,false);AudioPlayer.play('Coin');}else streak=0;
     bs.forEach(function(b){b.disabled=true;if(Number(b.dataset.answer)===current.answer)b.classList.add('correct');});
     if(!ok)bs[i].classList.add('incorrect');
     var feedback=document.getElementById('edu-feedback');

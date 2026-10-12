@@ -682,8 +682,25 @@ function shiftScaleStringVert(me, string, yvel) {
 
 function setClass(me, strin) { me.className = strin; setThingSprite(me); }
 function setClassInitial(me, strin) { me.className = strin; }
-function addClass(me, strin) { me.className += " " + strin; setThingSprite(me); }
-function removeClass(me, strout) { me.className = me.className.replace(new RegExp(" " + strout,"gm"),''); setThingSprite(me); }
+var spriteClassTokens = Object.create(null);
+var spriteClassRemovalPatterns = Object.create(null);
+function addClass(me, strin) {
+  var tokens = spriteClassTokens[strin] || (spriteClassTokens[strin] = strin.split(" "));
+  var changed = false;
+  for(var i = 0; i < tokens.length; ++i) {
+    if(tokens[i] && (" " + me.className + " ").indexOf(" " + tokens[i] + " ") === -1) {
+      me.className += " " + tokens[i]; changed = true;
+    }
+  }
+  if(changed) setThingSprite(me);
+}
+function removeClass(me, strout) {
+  if((" " + me.className + " ").indexOf(" " + strout + " ") === -1) return;
+  var pattern = spriteClassRemovalPatterns[strout] ||
+      (spriteClassRemovalPatterns[strout] = new RegExp(" " + strout + "(?= |$)","g"));
+  me.className = me.className.replace(pattern,'');
+  setThingSprite(me);
+}
 function switchClass(me, strout, strin) { removeClass(me, strout); addClass(me, strin); }
 function removeClasses(me) {
   var strings, arr, i, j;

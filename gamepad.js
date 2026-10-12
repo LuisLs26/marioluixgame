@@ -1,11 +1,14 @@
 (function(){
   'use strict';
-  var previous={}, device=null, wasModal=false, modalReady=false, lastDirection='', repeatAt=0;
+  var previous={}, device=null, wasModal=false, modalReady=false, lastDirection='', repeatAt=0, nextPoll=0;
   try{window.gamepadProfile=localStorage.eduGamepadProfile||'standard';}catch(e){window.gamepadProfile='standard';}
   try{window.padBindings=JSON.parse(localStorage.eduPadBindings||'{}');}catch(e){window.padBindings={};}
   function release(){if(window.player&&window.controls)Object.keys(previous).forEach(function(k){if(previous[k]&&controls.keyup[k])controls.keyup[k](player.keys);});previous={};lastDirection='';modalReady=false;}
   function tick(timestamp){
     requestAnimationFrame(tick);
+    // High refresh monitors should not allocate input state 144–240 times/sec.
+    if(timestamp < nextPoll) return;
+    nextPoll = timestamp + 1000 / 60;
     if(!window.player||!window.controls)return;
     var pads=navigator.getGamepads?navigator.getGamepads():[],gp=null;
     for(var i=0;i<pads.length;i++)if(pads[i]&&pads[i].connected){gp=pads[i];break;}

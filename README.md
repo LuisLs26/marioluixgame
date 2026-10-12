@@ -48,3 +48,11 @@ Los personajes, música y gráficos originales pertenecen a sus respectivos titu
 
 El cuestionario utiliza bloques de interrogación, moneda, borde de ladrillos, colores y tipografía de píxeles inspirados en Mario. La selección del mando se indica con una flecha visible. La transición de nivel ya no depende del evento de audio `ended`; se recuperó la función de avance 1-1 → 1-2, 1-4 → 2-1 hasta completar los ocho mundos.
 
+
+### Ajustes adicionales de fluidez
+
+Se evitan reconstrucciones de sprites cuando sus clases no cambian, se reutilizan los patrones de clases, el mando se consulta como máximo aproximadamente 60 veces por segundo y se conserva la referencia del marcador educativo. El lienzo principal usa un contexto opaco. A unos 60 Hz se presenta cada fotograma para evitar perder un dibujo por pequeñas variaciones del reloj.
+
+Al acertar una pregunta se reproduce el sonido original de moneda, respetando la opción de silencio. Una prueba verifica que la respuesta correcta lo activa.
+
+En una prueba local de cinco segundos con movimiento y CPU del navegador ralentizada 4×, se observaron 60 FPS de media y 3,8 ms en el percentil 95 del trabajo por llamada del bucle. Hubo 13 intervalos de dibujo superiores a 25 ms entre 302 fotogramas: esta medición no demuestra ausencia total de tirones ni garantiza 60 FPS estables en todos los equipos.
