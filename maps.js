@@ -465,27 +465,27 @@ function enterCloudWorld(me) {
   me.attached = new Thing(Vine, -1);
   addThing(me.attached, unitsizet32, screenbottom - unitsizet8);
   
-  var movement = setInterval(function() {
+  var movement = gameSetInterval(function() {
     // Vine moving up
     if(me.attached.top <= screentop) {
-      clearInterval(movement);
+      gameClearInterval(movement);
       setTop(me.attached, screentop, true);
       me.attached.movement = false;
       var stopheight = me.attached.top + unitsizet16;
-      movement = setInterval(function() {
+      movement = gameSetInterval(function() {
         // Player moving up
         shiftVert(me, unitsized4 * -1, true);
         if(me.top <= stopheight) {
           // Player stops moving up
           removeClass(me, "animated");
-          clearInterval(movement);
+          gameClearInterval(movement);
           setTop(me, stopheight, true);
-          clearInterval(movement);
-          setTimeout(function() {
+          gameClearInterval(movement);
+          gameSetTimeout(function() {
             // Player switches sides
             setLeft(me, unitsize * 36, true);
             addClass(me, "flipped");
-            setTimeout(function() {
+            gameSetTimeout(function() {
               // Player hops off
               playerHopsOff(me, me.attached, true);
               TimeHandler.clearClassCycle(me, "climbing");
@@ -503,12 +503,12 @@ function walkToPipe() {
   map.canscroll = false;
 
   var hasPipingStarted = false;
-  var move = setInterval(function() {
+  var move = gameSetInterval(function() {
     if(player.piping) {
       // We have started piping
       AudioPlayer.pauseTheme();
       // nokeys = player.keys.run = notime = false;
-      clearInterval(move);
+      gameClearInterval(move);
       player.maxspeed = player.maxspeedsave;
     }
   }, timer);
@@ -527,11 +527,11 @@ function intoPipeVert(me, pipe, transport) {
   pipePreparations(me);
   switchContainers(me, characters, scenery);
   unpause();
-  var move = setInterval(function() {
+  var move = gameSetInterval(function() {
     shiftVert(me, unitsized4, true);
     if(me.top >= pipe.top) {
-      clearInterval(move);
-      setTimeout(function() { goToTransport(transport); }, 700);
+      gameClearInterval(move);
+      gameSetTimeout(function() { goToTransport(transport); }, 700);
     }
   }, timer);
 }
@@ -543,11 +543,11 @@ function intoPipeHoriz(me, pipe, transport) {
   pipePreparations(me);
   switchContainers(me, characters, scenery);
   unpause();
-  var move = setInterval(function() {
+  var move = gameSetInterval(function() {
     shiftHoriz(me, unitsized4, true);
     if(me.left >= pipe.left) {
-      clearInterval(move);
-      setTimeout(function() { goToTransport(transport); }, 700);
+      gameClearInterval(move);
+      gameSetTimeout(function() { goToTransport(transport); }, 700);
     }
   }, timer);
 }
@@ -584,11 +584,11 @@ function exitPipeVert(me, pipe) {
   AudioPlayer.play("Pipe");
   setTop(me, pipe.top);
   setMidXObj(me, pipe, true);
-  var dy = unitsize / -4, move = setInterval(function() {
+  var dy = unitsize / -4, move = gameSetInterval(function() {
     shiftVert(me, dy, true);
     if(me.bottom <= pipe.top) {
       switchContainers(me, scenery, characters);
-      clearInterval(move);
+      gameClearInterval(move);
       me.nocollide = me.piping = me.nofall = nokeys = notime = false;
       me.placed = true;
     }
@@ -599,6 +599,7 @@ function endLevel() {
   if(map.ending) return;
   map.ending = true;
   storePlayerStats();
+  if(data.score.amount > (Number(gameStorage.get('highscore')) || 0)) gameStorage.set('highscore',data.score.amount);
   pause();
   if(map.random) return setMapRandom(["Random", "Castle"]);
   setNextLevelArr(currentmap);
@@ -1102,7 +1103,7 @@ function DtB(yloc, divider) {
 function BlankMap(map) {
   map.locs = [ new Location(0, entryBlank) ];
   map.areas = [ new Area("Overworld", function() {
-    setTimeout(refillCanvas, timer + 2);
+    gameSetTimeout(refillCanvas, timer + 2);
   }) ];
 }
 

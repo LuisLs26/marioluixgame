@@ -56,3 +56,13 @@ Se evitan reconstrucciones de sprites cuando sus clases no cambian, se reutiliza
 Al acertar una pregunta se reproduce el sonido original de moneda, respetando la opción de silencio. Una prueba verifica que la respuesta correcta lo activa.
 
 En una prueba local de cinco segundos con movimiento y CPU del navegador ralentizada 4×, se observaron 60 FPS de media y 3,8 ms en el percentil 95 del trabajo por llamada del bucle. Hubo 13 intervalos de dibujo superiores a 25 ms entre 302 fotogramas: esta medición no demuestra ausencia total de tirones ni garantiza 60 FPS estables en todos los equipos.
+
+### Revisión de robustez
+
+Los temporizadores pertenecen a cada partida y se cancelan al cambiar de mapa o reiniciar; los temporizadores externos permanecen intactos. Las animaciones de bloques, hongos y tuberías respetan la pausa. Las preferencias y la puntuación usan memoria como respaldo cuando el almacenamiento está bloqueado o lleno; se evita volver a leer del almacenamiento en cada evento de puntuación.
+
+Se preserva la posición de la cámara al cambiar el tamaño de ventana y se agrupan los eventos de redimensionado. Se cierran los cuestionarios antiguos al cambiar de mapa, se recupera el movimiento del mando al reaparecer y se tolera que el navegador deniegue acceso al mando. La selección por Tab coincide con la respuesta que confirma Enter.
+
+Las listas de objetos ya no eliminan elementos ajenos al recibir un índice ausente ni duplican objetos al cambiar de contenedor. Se evitan listeners de audio repetidos y errores al terminar una música; la opción de silencio se conserva correctamente. La conversión del tiempo en puntos también entrega las vidas correspondientes al cruzar 10 000 puntos y conserva el récord.
+
+Pruebas adicionales: `node tests/resilience.cjs`. Incluyen permisos de almacenamiento y mando denegados, temporizadores aislados, pausa, cámara, reaparición, cambio de mapa durante cuestionario, eliminación repetida, audio y navegación por teclado. Estas pruebas complementan la carga de los 32 niveles y el recorrido real de la bandera al nivel 1-2; no equivalen a completar todas las rutas y secretos manualmente.

@@ -11,6 +11,7 @@ function playCurrentThemeHurry(name_raw) {
 */
 function AudioPlayr(settings) {
   "use strict";
+  var audioPlayer = this;
   
   /* Member variables
   */
@@ -83,10 +84,13 @@ function AudioPlayr(settings) {
     } catch(err) {}
     
     // If this was the first time the sound was added, let it know how to stop
-    if(!(sound.used++))
+    ++sound.used;
+    if(!sound.finishListenerAttached) {
+      sound.finishListenerAttached = true;
       sound.addEventListener("ended", function() {
         soundFinish(sound, name_raw);
       });
+    }
     
     return sound;
   }
@@ -152,8 +156,12 @@ function AudioPlayr(settings) {
       sound.used = false;
     
     // If it's used (no repeat), add the event listener to resume theme
-    if(sound.used == 1)
-      sound.addEventListener("ended", this.playTheme);
+    if(!sound.themeListenerAttached) {
+      sound.themeListenerAttached = true;
+      sound.addEventListener("ended", function() {
+        if(theme === sound && !sound.loop) audioPlayer.playTheme();
+      });
+    }
     
     return sound;
   }
@@ -186,15 +194,17 @@ function AudioPlayr(settings) {
     for(var i in sounds)
       sounds[i].volume = muted ? 0 : (sounds[i].volume_real || 1);
     // If specified, store this in localStorage
-    if(localStorageMuted) 
-      localStorage[localStorageMuted] = muted;
+    if(localStorageMuted) {
+      if(typeof gameStorage !== 'undefined') gameStorage.set(localStorageMuted,muted);
+      else try { localStorage[localStorageMuted] = muted; } catch(e) {}
+    }
   }
   
   // Public: simple pause and resume functions
   this.pause = function() { for(var i in sounds) if(sounds[i]) soundPause(sounds[i]); }
   this.resume = function() { for(var i in sounds) if(sounds[i]) soundPlay(sounds[i]); }
   this.pauseTheme = function() { if(theme) theme.pause(); }
-  this.resumeTheme = function() { if(theme) theme.play(); }
+  this.resumeTheme = function() { if(theme) soundPlay(theme); }
   this.clear = function() {
     this.pause();
     sounds = {};
@@ -311,8 +321,12 @@ function AudioPlayr(settings) {
     sounds = {};
     
     // If specified, use localStorageMuted to record muted's value
-    if(localStorageMuted)
-      muted = localStorage[localStorageMuted];
+    if(localStorageMuted) {
+      var storedMute;
+      if(typeof gameStorage !== 'undefined') storedMute=gameStorage.get(localStorageMuted);
+      else try { storedMute=localStorage[localStorageMuted]; } catch(e) {}
+      muted = storedMute === 'true' || storedMute === true;
+    }
     
     // Preload everything!
     libraryLoad();

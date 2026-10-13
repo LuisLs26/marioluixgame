@@ -645,7 +645,7 @@ function movePirhanaRestart(me) {
   var marmid = getMidX(player);
   // If Player's too close and counter == 0, don't do anything
   if(me.counter >= me.countermax && marmid > me.left - unitsizet8 && marmid < me.right + unitsizet8) {
-    setTimeout(movePirhanaRestart, 7, me);
+    gameSetTimeout(movePirhanaRestart, 7, me);
     return;
   }
   // Otherwise start again
@@ -1820,14 +1820,14 @@ function killPlayer(me, big) {
   
   // If it's in editor, (almost) immediately set map
   if(window.editing) {
-    setTimeout(function() {
+    gameSetTimeout(function() {
       editorSubmitGameFuncPlay();
       editor.playing = editor.playediting = true;
     }, 35 * timer);
   }
   // If the map is normal, or failing that a game over is reached, timeout a reset
   else if(!map.random || data.lives.amount <= 0) {
-    window.reset = setTimeout(data.lives.amount ? setMap : gameOver, timer * 280);
+    window.reset = gameSetTimeout(data.lives.amount ? setMap : gameOver, timer * 280);
   }
   // Otherwise it's random; spawn him again
   else {
@@ -1863,6 +1863,7 @@ function playerDropsIn() {
 }
 
 function gameOver() {
+  clearAllTimeouts();
   // Having a gamecount of -1 truly means it's all over
   gameon = false;
   pause();
@@ -1880,7 +1881,7 @@ function gameOver() {
   window.gamecount = Infinity;
   clearPlayerStats();
   
-  setTimeout(gameRestart, 7000);
+  gameSetTimeout(gameRestart, 7000);
 }
 
 function gameRestart() {
@@ -1999,10 +2000,10 @@ function BrickShard(me) {
 }
 
 function attachEmerge(me, solid) {
-  me.animate = setInterval(function() {
+  me.animate = gameSetInterval(function() {
     setBottom(me, solid.top, true);
     if(!solid.up) {
-      clearInterval(me.animate);
+      gameClearInterval(me.animate);
       me.animate = false;
     }
   }, timer);
@@ -2615,6 +2616,7 @@ function endLevelPoints(me, detector) {
   
   // Determine the number of fireballs (1, 3, and 6 become not 0)
   var numfire = parseInt(getLast(String(data.time.amount)));
+  var startingScore = data.score.amount;
   if(!(numfire == 1 || numfire == 3 || numfire == 6)) numfire = 0;
   // Count down the points (x50)
   TimeHandler.addEventInterval(function() {
@@ -2627,6 +2629,8 @@ function endLevelPoints(me, detector) {
     AudioPlayer.play("Coin");
     // Once it's done, move on to the fireworks.
     if(data.time.amount <= 0)  {
+      var bonusLives = Math.floor(data.score.amount / 10000) - Math.floor(startingScore / 10000);
+      if(bonusLives > 0) gainLife(bonusLives);
       // pause();
       TimeHandler.addEvent(function() { endLevelFireworks(me, numfire, detector); }, 49);
       return true;

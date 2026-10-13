@@ -46,18 +46,21 @@ function FullScreenMario() {
   resetSeed();
   resetSounds();
 
-  window.luigi = (localStorage && localStorage.luigi == "true");
+  window.luigi = (gameStorage.get("luigi") === "true");
 
   // Stub editor variables to avoid loading editor.js and optimize memory
   window.editing = false;
   window.editor = { playing: false, playediting: false };
 
   // Set up resize handler for responsive widescreen adaptation
-  window.addEventListener("resize", function() {
+  function resizeGameView() {
     if (!window.gamescreen || !window.canvas) return;
     
     // Update gamescreen dimensions to match viewport aspect ratio
+    var cameraLeft=gamescreen.left, cameraTop=gamescreen.top;
     resetGameScreenPosition();
+    gamescreen.left=cameraLeft;gamescreen.right+=cameraLeft;
+    gamescreen.top=cameraTop;gamescreen.bottom+=cameraTop;
     
     // Resize the main canvas backing buffer
     resizeRenderCanvas();
@@ -84,6 +87,11 @@ function FullScreenMario() {
     
     // Redraw screen
     refillCanvas();
+  }
+  var resizePending=false;
+  window.addEventListener("resize",function(){
+    if(resizePending)return;resizePending=true;
+    requestAnimationFrame(function(){resizePending=false;resizeGameView();});
   });
 
   // With that all set, set the map to World11.
@@ -94,24 +102,15 @@ function FullScreenMario() {
   log("It took " + (Date.now() - time_start) + " milliseconds to start.");
 }
 
-// To do: add in a real polyfill
-function ensureLocalStorage() {
-  var ls_ok = false;
-  try {
-  if(!window.hasOwnProperty("localStorage"))
-    window.localStorage = { crappy: true };
-  
-  // Some browsers (mainly IE) won't allow it on a local machine anyway
-  if(window.localStorage) ls_ok = true;
- }
- catch(err) {
-    ls_ok = false;
-  }
-  if(!ls_ok) {
-    var nope = document.body.innerText = "It seems your browser does not allow localStorage!";
-    throw nope;
-  }
-}
+// Persistence is optional. Quota limits and privacy settings must not stop play.
+var gameStorage = (function() {
+  var memory = Object.create(null);
+  return {
+    get: function(key) { if(Object.prototype.hasOwnProperty.call(memory,key))return memory[key]; try { var value = window.localStorage.getItem(key); if(value !== null){memory[key]=value;return value;} } catch(e) {} return memory[key]; },
+    set: function(key, value) { memory[key] = String(value); try { window.localStorage.setItem(key, value); } catch(e) {} }
+  };
+})();
+function ensureLocalStorage() { /* gameStorage provides an in-memory fallback. */ }
 
 /* Basic reset operations */
 function resetMeasurements() {
@@ -202,10 +201,11 @@ function resetEvents() {
 function resetSounds() {
   window.sounds = {};
   window.theme = false;
-  window.muted = (localStorage && localStorage.muted == "true");
+  window.muted = (gameStorage.get("muted") === "true");
   
   window.AudioPlayer = new AudioPlayr({
     directory: "Sounds",
+    localStorageMuted: "muted",
     getVolumeLocal: function() { return .49; },
     getThemeDefault: function() { return area.theme; }, 
     library: {

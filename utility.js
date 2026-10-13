@@ -11,10 +11,32 @@ function followPath(obj, path, num) {
   return obj;
 }
 
-// Expensive - use only on clearing
+// Track only this game's timers. Never scan browser timer IDs or cancel UI timers.
+var gameTimeouts = new Set();
+var gameIntervals = new Set();
+function gameSetTimeout(callback, delay) {
+  var args = Array.prototype.slice.call(arguments, 2), id;
+  function run() {
+    gameTimeouts.delete(id);
+    if(window.paused && window.gameon) {
+      id = setTimeout(run, 100); gameTimeouts.add(id); return;
+    }
+    callback.apply(null, args);
+  }
+  id = setTimeout(run, delay); gameTimeouts.add(id); return id;
+}
+function gameSetInterval(callback, delay) {
+  var args = Array.prototype.slice.call(arguments, 2);
+  var id = setInterval(function() {
+    if(!window.paused || !window.gameon) callback.apply(null, args);
+  }, delay);
+  gameIntervals.add(id); return id;
+}
+function gameClearInterval(id) { clearInterval(id); gameIntervals.delete(id); }
 function clearAllTimeouts() {
-  var id = setTimeout(function() {});
-  while(id--) clearTimeout(id);
+  gameTimeouts.forEach(function(id) { clearTimeout(id); });
+  gameIntervals.forEach(function(id) { clearInterval(id); });
+  gameTimeouts.clear(); gameIntervals.clear();
 }
 
 // Width and height are given as number of pixels (to scale; unitsize) 
@@ -731,15 +753,20 @@ function unflipVert(me) { removeClass(me, "flip-vert"); }
 
 // Javascript memory management, you are bad and should feel bad.
 function deleteThing(me, array, arrayloc) {
+  if(array[arrayloc] !== me) arrayloc = array.indexOf(me);
+  if(arrayloc < 0) return false;
   array.splice(arrayloc, 1);
   if(me.ondelete) me.ondelete();
+  return true;
 }
 function switchContainers(me, outer, inner) {
-  outer.splice(outer.indexOf(me), 1);
-  inner.push(me);
+  var index = outer.indexOf(me);
+  if(index >= 0) outer.splice(index, 1);
+  if(inner.indexOf(me) < 0) inner.push(me);
 }
 function containerForefront(me, container) {
-  container.splice(container.indexOf(me), 1);
+  var index = container.indexOf(me);
+  if(index >= 0) container.splice(index, 1);
   container.unshift(me);
 }
 function killNormal(me) {
@@ -759,20 +786,20 @@ function killFlip(me, extra) {
 
 // To do: phase this out in favor of an addEvent-based one
 function generalMovement(me, dx, dy, cleartime) {
-  var move = setInterval(function() {
+  var move = gameSetInterval(function() {
     shiftVert(me, dy);
     shiftHoriz(me, dx);
   }, timer);
-  setTimeout(function() { clearInterval(move); }, cleartime);
+  gameSetTimeout(function() { gameClearInterval(move); }, cleartime);
 }
 function blockBumpMovement(me) {
   var dir = -3, dd = .5;
   // To do: addEventInterval?
-  var move = setInterval(function() {
+  var move = gameSetInterval(function() {
     shiftVert(me, dir);
     dir += dd;
     if(dir == 3.5) {
-      clearInterval(move);
+      gameClearInterval(move);
       me.up = false;
     }
     determineThingCollisions(me); // for coins
@@ -785,11 +812,11 @@ function emergeUp(me, solid) {
   me.nomove = me.nocollide = me.alive = me.nofall = me.emerging = true;
   switchContainers(me, characters, scenery);
   // Start moving up
-  var move = setInterval(function() {
+  var move = gameSetInterval(function() {
         shiftVert(me, -unitsized8);
         // Stop once the bottom is high enough
         if(me.bottom <= solid.top) {
-          clearInterval(move);
+          gameClearInterval(move);
           switchContainers(me, scenery, characters);
           me.nocollide = me.nomove = me.moveleft = me.nofall = me.emerging = false;
           // If it has a function to call after being completely out (vines), do it

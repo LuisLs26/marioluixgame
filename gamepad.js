@@ -1,16 +1,26 @@
 (function(){
   'use strict';
   var previous={}, device=null, wasModal=false, modalReady=false, lastDirection='', repeatAt=0, nextPoll=0;
+  var controlledPlayer=null, wasBlocked=false;
   try{window.gamepadProfile=localStorage.eduGamepadProfile||'standard';}catch(e){window.gamepadProfile='standard';}
   try{window.padBindings=JSON.parse(localStorage.eduPadBindings||'{}');}catch(e){window.padBindings={};}
+  if(!padBindings || typeof padBindings!=='object' || Array.isArray(padBindings)) window.padBindings={};
+  ['jump','run','pause'].forEach(function(key){if(padBindings[key]!==undefined && (!Number.isInteger(padBindings[key]) || padBindings[key]<0 || padBindings[key]>31))delete padBindings[key];});
   function release(){if(window.player&&window.controls)Object.keys(previous).forEach(function(k){if(previous[k]&&controls.keyup[k])controls.keyup[k](player.keys);});previous={};lastDirection='';modalReady=false;}
   function tick(timestamp){
     requestAnimationFrame(tick);
     // High refresh monitors should not allocate input state 144–240 times/sec.
-    if(timestamp < nextPoll) return;
-    nextPoll = timestamp + 1000 / 60;
+    if(!nextPoll) nextPoll=timestamp;
+    if(timestamp + 0.75 < nextPoll) return;
+    nextPoll += 1000 / 60;
+    if(nextPoll < timestamp - 1000 / 60) nextPoll=timestamp+1000/60;
     if(!window.player||!window.controls)return;
-    var pads=navigator.getGamepads?navigator.getGamepads():[],gp=null;
+    if(document.hidden) { if(device!==null)release(); return; }
+    var blocked=!!(window.paused||window.nokeys);
+    if(controlledPlayer!==window.player || (wasBlocked && !blocked)) { release(); controlledPlayer=window.player; }
+    wasBlocked=blocked;
+    var pads=[],gp=null;
+    try { if(navigator.getGamepads)pads=navigator.getGamepads(); } catch(e) { if(device!==null)release();device=null;return; }
     for(var i=0;i<pads.length;i++)if(pads[i]&&pads[i].connected){gp=pads[i];break;}
     if(!gp){if(device!==null)release();device=null;return;}
     if(device!==gp.index){release();device=gp.index;}

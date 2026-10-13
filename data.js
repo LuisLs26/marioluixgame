@@ -62,7 +62,7 @@ function clearDataDisplay() {
 
 function toggleLuigi() {
   window.luigi = !window.luigi;
-  localStorage.luigi = window.luigi;
+  gameStorage.set("luigi", window.luigi);
   window.player.title = (window.luigi) ? "Luigi" : "Mario";
   setThingSprite(window.player);
 }
@@ -101,7 +101,8 @@ function score(me, amount, appears) {
   if(arguments.length == 1) return score(player, me);
   // Keep the high score in localStorage, why not.
   data.score.amount += amount;
-  localStorage.highscore = Math.max(Number(localStorage.highscore) || 0, data.score.amount);
+  var highscore = Number(gameStorage.get("highscore")) || 0;
+  if(data.score.amount > highscore) gameStorage.set("highscore", data.score.amount);
   // If it appears, add the element
   if(appears) {
     var text = addText(amount, me.left, me.top);

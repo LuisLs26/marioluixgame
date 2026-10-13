@@ -25,7 +25,7 @@
   }
   function close() { if(panel)panel.remove(); panel=null; resetInput(); if(priorFocus && priorFocus.isConnected)priorFocus.focus(); }
   window.eduLocked=function(){return !!panel;};
-  window.eduResetQueue=function(){queue.length=0;};
+  window.eduResetQueue=function(){queue.length=0;if(panel)close();current=null;answered=false;};
   window.eduTrigger=function(kind,thing) {
     if(kind !== 'moneda' && kind !== 'hongo') return;
     if(thing && thing.eduAsked)return;
@@ -34,7 +34,7 @@
   };
   window.eduFlush=function(){
     ensureUI();
-    if(!panel && queue.length && window.player && player.alive && !player.dying)showQuestion();
+    if(!panel && queue.length && window.player && player.alive && !player.dying && !window.nokeys)showQuestion();
   };
   function showQuestion() {
     var kind=queue.shift();
@@ -46,7 +46,7 @@
     content.innerHTML='<p class="edu-source"></p><h2></h2><div class="edu-options"></div><p id="edu-feedback" role="status" aria-live="polite"></p><button id="edu-continue" hidden>Continuar aventura →</button><p class="edu-hint">1–4 o ↑ ↓ + Enter · Mando: cruceta + ✕ / A</p>';
     content.querySelector('.edu-source').textContent='Evaluación de los aprendizajes · sección '+current.section+' · pág. '+current.page;
     content.querySelector('h2').textContent=current.question;
-    choices.forEach(function(choice,i){var b=document.createElement('button');b.className='edu-option';b.textContent=(i+1)+'. '+choice.text;b.dataset.answer=choice.index;b.onclick=function(){answer(i);};content.querySelector('.edu-options').appendChild(b);});
+    choices.forEach(function(choice,i){var b=document.createElement('button');b.className='edu-option';b.textContent=(i+1)+'. '+choice.text;b.dataset.answer=choice.index;b.onclick=function(){answer(i);};b.onfocus=function(){selected=i;panel.querySelectorAll('.edu-option').forEach(function(option,n){option.classList.toggle('selected',n===i);});};content.querySelector('.edu-options').appendChild(b);});
     document.getElementById('edu-continue').onclick=function(){close();if(queue.length)showQuestion();else unpause();};
     focusOption(0);
   }
@@ -73,7 +73,7 @@
   };
   function showHelp(){
     if(panel)return; overlay('Tu aventura, tus controles');
-    document.getElementById('edu-content').innerHTML='<p>Recoge monedas y consume hongos para responder preguntas. Derrota enemigos sin interrumpir la aventura. El mundo se detiene mientras piensas. Cada acierto suma 250 puntos; los errores incluyen una explicación.</p><p><strong>Teclado:</strong> A/D o ←/→: mover · W/↑/Espacio: saltar · S/↓: agacharse · Shift/X: correr o disparar · P/Escape/Enter: pausa · M: sonido.</p><p><strong>Mando:</strong> stick/cruceta: mover · ✕/A: saltar y confirmar · □/X: correr · Options/Start: pausa. Conéctalo y pulsa un botón.</p><label>Perfil de mando <select id="edu-profile"><option value="standard">Automático / PlayStation / Xbox</option><option value="generic">Genérico USB (botones 3 y 0)</option></select></label><p id="edu-controller">Sin mando detectado</p><button class="edu-close">¡A jugar!</button>';
+    document.getElementById('edu-content').innerHTML='<p>Recoge monedas y consume hongos para responder preguntas. Derrota enemigos sin interrumpir la aventura. El mundo se detiene mientras piensas. Cada acierto suma 250 puntos; los errores incluyen una explicación.</p><p><strong>Teclado:</strong> A/D o ←/→: mover · W/↑/Espacio: saltar · S/↓: agacharse · Shift/X: correr o disparar · P/Escape/Enter: pausa · M: sonido.</p><p><strong>Mando:</strong> stick/cruceta: mover · ✕/A: saltar y confirmar · □/X: correr · Options/Start: pausa. Conéctalo y pulsa un botón.</p><label>Perfil de mando <select id="edu-profile"><option value="standard">Automático / PlayStation / Xbox</option><option value="generic">Genérico USB (botones 2 y 0)</option></select></label><p id="edu-controller">Sin mando detectado</p><button class="edu-close">¡A jugar!</button>';
     var s=document.getElementById('edu-profile');s.value=window.gamepadProfile||'standard';s.onchange=function(){window.gamepadProfile=s.value;try{localStorage.eduGamepadProfile=s.value;}catch(e){}};
     var settings=document.createElement('p');
     settings.innerHTML='<small>Si tu mando tiene otra distribución, ajusta el número de botón (desde 0):</small><br><label>Salto <input id="pad-jump" type="number" min="0" max="31" value="0"></label> <label>Correr <input id="pad-run" type="number" min="0" max="31" value="2"></label> <label>Pausa <input id="pad-pause" type="number" min="0" max="31" value="9"></label><button id="pad-reset">Restablecer botones</button>';
@@ -89,7 +89,7 @@
   window.toggleGamePause=function(){if(panel)return;if(paused){unpause();return;}overlay('Aventura en pausa');document.getElementById('edu-content').innerHTML='<p>Tómate un respiro. Tu partida te espera.</p><button class="edu-close">Reanudar</button>';panel.querySelector('button').onclick=function(){close();unpause();};panel.querySelector('button').focus();};
   document.addEventListener('keydown',function(e){
     if(!panel)return;
-    if(e.target.tagName==='SELECT'||e.target.tagName==='INPUT') { e.stopPropagation(); return; }
+    if((e.target.tagName==='SELECT'||e.target.tagName==='INPUT') && e.key!=='Tab' && e.key!=='Escape') { e.stopPropagation(); return; }
     var handled=true;
     if(e.key==='ArrowUp')eduNavigate('up');else if(e.key==='ArrowDown')eduNavigate('down');else if(e.key==='Enter'||e.key===' ') {if(!e.repeat)eduNavigate('confirm');}
     else if(/^[1-4]$/.test(e.key)&&panel.querySelector('.edu-options')&&!answered)answer(Number(e.key)-1);
