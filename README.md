@@ -66,3 +66,9 @@ Se preserva la posición de la cámara al cambiar el tamaño de ventana y se agr
 Las listas de objetos ya no eliminan elementos ajenos al recibir un índice ausente ni duplican objetos al cambiar de contenedor. Se evitan listeners de audio repetidos y errores al terminar una música; la opción de silencio se conserva correctamente. La conversión del tiempo en puntos también entrega las vidas correspondientes al cruzar 10 000 puntos y conserva el récord.
 
 Pruebas adicionales: `node tests/resilience.cjs`. Incluyen permisos de almacenamiento y mando denegados, temporizadores aislados, pausa, cámara, reaparición, cambio de mapa durante cuestionario, eliminación repetida, audio y navegación por teclado. Estas pruebas complementan la carga de los 32 niveles y el recorrido real de la bandera al nivel 1-2; no equivalen a completar todas las rutas y secretos manualmente.
+
+### Movimiento de cámara suave
+
+La cámara conserva las posiciones anteriores del escenario para interpolarlas junto con Mario entre pasos de física. Los sprites simples se dibujan directamente en su posición interpolada, sin dos transformaciones adicionales del contexto por objeto. El descarte fuera de pantalla usa la posición visible interpolada para evitar que un objeto desaparezca antes de salir del encuadre. Las pausas y los desplazamientos grandes conservan su posición exacta.
+
+Regresión específica: `node tests/motion.cjs` comprueba posiciones intermedias del escenario, bordes visibles, teletransportes, pausa y ausencia de cambios en la posición física.

@@ -435,20 +435,21 @@ function refillCanvas() {
 // Calls drawThingOnCanvas[Single/Multiple] with more arguments
 function drawThingOnCanvas(context, me) {
   if(me.hidden) return;
-  // Frustum culling: do not waste draw calls on objects outside the visible canvas
-  if(me.right < 0 || me.left > gamescreen.unitwidth || me.bottom < 0 || me.top > gamescreen.unitheight) return;
-  
   var fraction = window.paused ? 1 : (window.renderFraction === undefined ? 1 : window.renderFraction);
   var dx = me.renderPreviousLeft === undefined ? 0 : (me.renderPreviousLeft - me.left) * (1 - fraction);
   var dy = me.renderPreviousTop === undefined ? 0 : (me.renderPreviousTop - me.top) * (1 - fraction);
   // Teleports and map transitions should appear immediately.
   if(Math.abs(dx) > unitsize * 32 || Math.abs(dy) > unitsize * 32) dx = dy = 0;
-  if(dx || dy) context.translate(dx, dy);
+  // Cull at the displayed position, including the camera's interpolated offset.
+  if(me.right + dx < 0 || me.left + dx > gamescreen.unitwidth || me.bottom + dy < 0 || me.top + dy > gamescreen.unitheight) return;
   // If there's just one sprite, it's pretty simple
-  if(me.num_sprites == 1) drawThingOnCanvasSingle(context, me.canvas, me, me.left, me.top);
+  if(me.num_sprites == 1) drawThingOnCanvasSingle(context, me.canvas, me, me.left + dx, me.top + dy);
   // Otherwise some calculations will be needed
-  else drawThingOnCanvasMultiple(context, me.canvases, me.canvas, me, me.left, me.top);
-  if(dx || dy) context.translate(-dx, -dy);
+  else {
+    if(dx || dy) context.translate(dx, dy);
+    drawThingOnCanvasMultiple(context, me.canvases, me.canvas, me, me.left, me.top);
+    if(dx || dy) context.translate(-dx, -dy);
+  }
 }
 // Used for the vast majority of sprites, where only one sprite is drawn
 function drawThingOnCanvasSingle(context, canvas, me, leftc, topc) {

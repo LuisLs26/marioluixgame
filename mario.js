@@ -311,8 +311,8 @@ function scrollWindow(x, y) {
 function shiftAll(stuff, x, y) {
   for(var i = stuff.length - 1; i >= 0; --i) {
     shiftBoth(stuff[i], x, y);
-    if(stuff[i].renderPreviousLeft !== undefined) stuff[i].renderPreviousLeft += x || 0;
-    if(stuff[i].renderPreviousTop !== undefined) stuff[i].renderPreviousTop += y || 0;
+    // Keep the previous screen position intact: camera motion must be
+    // interpolated along with character motion, rather than snapping scenery.
   }
 }
 function shiftElements(stuff, x, y) {
