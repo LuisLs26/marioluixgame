@@ -8,7 +8,6 @@
   ['jump','run','pause'].forEach(function(key){if(padBindings[key]!==undefined && (!Number.isInteger(padBindings[key]) || padBindings[key]<0 || padBindings[key]>31))delete padBindings[key];});
   function release(){if(window.player&&window.controls)Object.keys(previous).forEach(function(k){if(previous[k]&&controls.keyup[k])controls.keyup[k](player.keys);});previous={};lastDirection='';modalReady=false;}
   function tick(timestamp){
-    requestAnimationFrame(tick);
     // High refresh monitors should not allocate input state 144–240 times/sec.
     if(!nextPoll) nextPoll=timestamp;
     if(timestamp + 0.75 < nextPoll) return;
@@ -51,5 +50,17 @@
   }
   window.addEventListener('blur',release);
   window.addEventListener('gamepaddisconnected',release);
-  requestAnimationFrame(tick);
+  // Gameplay reads input inside the main frame, rather than scheduling a
+  // second animation loop. Keep a lightweight pump only for paused dialogs.
+  window.pollGamepad = tick;
+  window.resetGamepadTiming=function(){nextPoll=0;};
+  function pausedTick(timestamp) {
+    window.pausedGamepadFrame = null;
+    if(!window.paused) return;
+    tick(timestamp);
+    if(window.paused) window.pausedGamepadFrame=requestAnimationFrame(pausedTick);
+  }
+  window.ensureGamepadPolling=function() {
+    if(!window.pausedGamepadFrame) window.pausedGamepadFrame=requestAnimationFrame(pausedTick);
+  };
 })();

@@ -23,7 +23,7 @@ function FullScreenMario() {
                            || window.mozRequestAnimationFrame
                            || window.webkitRequestAnimationFrame
                            || window.msRequestAnimationFrame
-                           || function(func) { setTimeout(func, timer); };
+                           || function(func) { return setTimeout(function(){func(performance.now());}, 1000/60); };
   window.cancelAnimationFrame = window.cancelAnimationFrame
                            || window.webkitCancelRequestAnimationFrame
                            || window.mozCancelRequestAnimationFrame

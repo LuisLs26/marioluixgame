@@ -7,7 +7,6 @@ var fps_last_calc = 0;
 
 var physicsAccumulator = 0;
 var animationGeneration = 0;
-var nextRenderTime = 0;
 function scheduleUpkeep() {
   if(window.nextupk || window.paused) return;
   var generation = animationGeneration;
@@ -25,8 +24,10 @@ function rememberRenderPositions(things) {
 }
 function upkeep(timestamp) {
   if(window.paused) return;
-  scheduleUpkeep();
   timestamp = typeof timestamp === "number" ? timestamp : performance.now();
+  if(window.pollGamepad) pollGamepad(timestamp);
+  if(window.paused) return;
+  scheduleUpkeep();
   if(!last_frame_time) { last_frame_time=timestamp; fps_last_calc=timestamp; return; }
   var elapsed = Math.min(timestamp-last_frame_time, 100);
   physicsAccumulator += elapsed;
@@ -46,17 +47,10 @@ function upkeep(timestamp) {
     }
   }
   if(steps===5)physicsAccumulator=Math.min(physicsAccumulator,stepTime);
-  // Rendering has its own deadline, independent of physics. This avoids
-  // alternating drawn/skipped frames when physics lands between two callbacks.
+  // Present on every browser refresh. A second 60 Hz limiter can beat against
+  // the display clock and drop alternate frames on a 60 Hz screen.
   window.renderFraction = paused ? 1 : Math.max(0, Math.min(1, physicsAccumulator / stepTime));
-  if(!nextRenderTime) nextRenderTime = timestamp;
-  // At roughly 60 Hz, always present the frame instead of skipping an early
-  // callback. At higher refresh rates use the 60 Hz presentation deadline.
-  if(elapsed >= 15 || timestamp + 0.75 >= nextRenderTime) {
-    refillCanvas(); ++frame_count;
-    nextRenderTime += stepTime;
-    if(nextRenderTime < timestamp - stepTime) nextRenderTime = timestamp + stepTime;
-  }
+  refillCanvas(); ++frame_count;
   if(timestamp-fps_last_calc>=1000) {
     window.fps=Math.round(frame_count*1000/(timestamp-fps_last_calc));
     var el=document.getElementById("fps_counter");
@@ -71,13 +65,17 @@ function adjustFPS() {
 
 function pause(big) {
   ++animationGeneration;
-  if(paused && !window.nextupk) return;
+  if(paused && !window.nextupk) {
+    if(window.ensureGamepadPolling) ensureGamepadPolling();
+    return;
+  }
   if(window.nextupk) {
     cancelAnimationFrame(nextupk);
     window.nextupk = null;
   }
   AudioPlayer.pause();
   paused = true;
+  if(window.ensureGamepadPolling) ensureGamepadPolling();
   if(big) AudioPlayer.play("Pause");
 }
 
@@ -86,9 +84,13 @@ function unpause() {
   last_frame_time = 0;
   physicsAccumulator = 0;
   frame_count = 0;
-  nextRenderTime = 0;
   window.time_prev = (window.performance && performance.now) ? performance.now() : now();
   paused = false;
+  if(window.resetGamepadTiming) resetGamepadTiming();
+  if(window.pausedGamepadFrame) {
+    cancelAnimationFrame(window.pausedGamepadFrame);
+    window.pausedGamepadFrame=null;
+  }
   ++animationGeneration;
   window.nextupk = null;
   scheduleUpkeep();

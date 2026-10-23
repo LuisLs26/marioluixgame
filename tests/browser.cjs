@@ -48,7 +48,7 @@ const {chromium} = require(process.env.PLAYWRIGHT_MODULE || 'playwright');
  const drawn=await page.evaluate(()=>{
   pause();const originalRAF=requestAnimationFrame, originalDraw=refillCanvas;
   requestAnimationFrame=()=>0;let renders=0;refillCanvas=()=>{renders++;};
-  paused=false;last_frame_time=1000;nextRenderTime=1000+1000/60;physicsAccumulator=0;
+  paused=false;last_frame_time=1000;physicsAccumulator=0;
   let t=1000;for(let i=0;i<60;i++){t+=i%2?1000/30-16.5:16.5;upkeep(t);}
   pause();requestAnimationFrame=originalRAF;refillCanvas=originalDraw;
   return renders;

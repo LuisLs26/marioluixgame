@@ -32,7 +32,7 @@ En **Controles / mando** puedes elegir el perfil genérico USB o cambiar los nú
 
 ## Rendimiento y correcciones
 
-Objetivo: 60 FPS, sin garantizarlo en todos los equipos. Modo de rendimiento predeterminado: buffer de 240 píxeles de altura, ancho máximo de 480; procesa un 75 % menos de píxeles que el modo de más resolución (480 píxeles de altura). Se cambia en Controles / mando sin reiniciar la partida. Sprites y patrones en caché y descarte de dibujos fuera de pantalla. Física a 60 pasos por segundo mediante acumulador, con recuperación limitada después de una interrupción para evitar bloqueos. El reloj y movimiento no se aceleran en pantallas de 120/144 Hz. El dibujado tiene su propio calendario de 60 FPS e interpolación entre posiciones físicas para evitar saltos; un identificador del bucle impide que sobrevivan ciclos de animación antiguos al pausar.
+Objetivo: 60 FPS, sin garantizarlo en todos los equipos. Modo de rendimiento predeterminado: buffer de 240 píxeles de altura, ancho máximo de 480; procesa un 75 % menos de píxeles que el modo de más resolución (480 píxeles de altura). Se cambia en Controles / mando sin reiniciar la partida. Sprites y patrones en caché y descarte de dibujos fuera de pantalla. Física a 60 pasos por segundo mediante acumulador, con recuperación limitada después de una interrupción para evitar bloqueos. El reloj y movimiento no se aceleran en pantallas de 120/144 Hz. El dibujado se sincroniza directamente con el refresco del navegador y usa interpolación entre posiciones físicas; un identificador del bucle impide que sobrevivan ciclos de animación antiguos al pausar.
 
 Se corrigieron la pausa al soltar teclas, direcciones simultáneas, controles retenidos al perder foco o desconectar el mando, entidades saltadas al borrar durante la iteración, puntuación máxima inválida y entrega de vidas al superar múltiplos de 10 000 puntos. El constructor de mapas ya no sobrescribe `Map` nativo del navegador.
 
@@ -72,3 +72,12 @@ Pruebas adicionales: `node tests/resilience.cjs`. Incluyen permisos de almacenam
 La cámara conserva las posiciones anteriores del escenario para interpolarlas junto con Mario entre pasos de física. Los sprites simples se dibujan directamente en su posición interpolada, sin dos transformaciones adicionales del contexto por objeto. El descarte fuera de pantalla usa la posición visible interpolada para evitar que un objeto desaparezca antes de salir del encuadre. Las pausas y los desplazamientos grandes conservan su posición exacta.
 
 Regresión específica: `node tests/motion.cjs` comprueba posiciones intermedias del escenario, bordes visibles, teletransportes, pausa y ausencia de cambios en la posición física.
+
+
+### Sincronización para pantallas de 60 Hz
+
+Eliminado el segundo limitador de presentación: cada callback de `requestAnimationFrame` recibido presenta un fotograma. A 60 Hz se dibuja una vez por refresco; en pantallas de más Hz puede dibujar a esa frecuencia sin acelerar la física, que sigue a 60 pasos por segundo. Si el propio navegador entrega solo 30 callbacks por segundo, el juego no puede convertirlos en 60 refrescos visibles.
+
+El mando se lee dentro del bucle principal; solo utiliza un bucle independiente cuando el juego está pausado para poder responder los cuestionarios. Las colisiones descartan primero columnas completas fuera del objeto, y la limpieza de textos evita lecturas de tamaño que forzaban recalcular la página durante el desplazamiento.
+
+`node tests/frame-pacing.cjs` verifica 300 dibujos en 300 refrescos a 60 Hz durante cinco segundos simulados, también con variaciones entre 14,13 y 19,2 ms, y mantiene 300 pasos de física a 30/59,94/60/120/144 Hz. También compara 1 000 casos de colisión con el recorrido original y verifica la limpieza de textos sin leer medidas de layout. Son pruebas de sincronización y equivalencia, no una garantía de rendimiento para cualquier PC.

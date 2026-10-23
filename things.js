@@ -179,7 +179,15 @@ function checkTexts() {
     me = texts[i];
     if(!me) continue;
     element = me.element || me;
-    me.right = me.left + (element.clientWidth || 0);
+    // Text moves through CSS each tick. Reading clientWidth here forces a
+    // synchronous layout roughly every two seconds while scrolling.
+    // A conservative width is sufficient for deleting fully off-screen labels.
+    var content = element.textContent || '';
+    if(element.cullText !== content) {
+      element.cullText = content;
+      element.cullWidth = Math.max(gamescreen.unitwidth, content.length * 64);
+    }
+    me.right = me.left + (element.cullWidth || gamescreen.unitwidth);
     if(me.right < delx) {
       if(element && element.parentNode) {
         element.parentNode.removeChild(element);

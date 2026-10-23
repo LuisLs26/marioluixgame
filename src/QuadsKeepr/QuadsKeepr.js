@@ -176,12 +176,18 @@ function QuadsKeepr(settings) {
     thing[thing_num_quads] = 0;
     // Check each Quadrant for collision
     // (to do: mathematically determine this)
-    for(var i = 0; i < num_quads; ++i)
-      if(thingInQuadrant(thing, quadrants[i])) {
-        setThingInQuadrant(thing, quadrants[i], i);
-        if(thing[thing_num_quads] > thing[thing_max_quads])
-          return;
+    var left = thing[thing_left] - tolerance, right = thing[thing_right] + tolerance;
+    for(var col = 0; col < columns.length; ++col) {
+      var column = columns[col];
+      if(right < column[0].left || left > column[0].right) continue;
+      for(var row = 0; row < column.length; ++row) {
+        var quadrant = column[row];
+        if(thingInQuadrant(thing, quadrant)) {
+          setThingInQuadrant(thing, quadrant, col * num_rows + row);
+          if(thing[thing_num_quads] > thing[thing_max_quads]) return;
+        }
       }
+    }
   }
   
   // Let a Thing and Quadrant know they're related
